@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/browser";
-import { v4 as uuidv4 } from "uuid";
+
+// merchant_uid는 결제 1건을 구분하는 고유값입니다.
+// uuid 라이브러리 대신 브라우저 내장 crypto.randomUUID()를 사용합니다(빌드 오류 방지).
+function makeMerchantUid(prefix: string) {
+  const id = (typeof crypto !== "undefined" && "randomUUID" in crypto)
+    ? (crypto as any).randomUUID()
+    : `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  return `${prefix}${id}`;
+}
+
 
 declare global {
   interface Window {
@@ -28,7 +37,7 @@ export default function PricingCard() {
     }
 
     // 1) 주문서(merchant_uid) 생성: 우리 DB에 먼저 저장(ready)
-    const merchant_uid = `sc_${uuidv4()}`;
+    const merchant_uid = makeMerchantUid("sc_");
     const { error: orderErr } = await fetch("/api/orders/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
